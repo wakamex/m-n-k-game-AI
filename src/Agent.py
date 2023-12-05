@@ -1,5 +1,4 @@
 import random
-import numpy
 
 class Agent:
     def __init__(self, playerNumber, boardSize, winningSize, scoringArray, restrictMoves): 
@@ -14,8 +13,8 @@ class Agent:
             }
         }
         self.playerNumber = playerNumber
-        self.boardSize = boardSize       
-        self.winningSize = winningSize 
+        self.boardSize = boardSize
+        self.winningSize = winningSize
         self.scoringArray = [0] + scoringArray
         self.restrictMoves = restrictMoves
 

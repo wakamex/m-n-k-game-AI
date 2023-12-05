@@ -1,6 +1,6 @@
 {
-    "board": [15, 15],
-    "winningSize": 5,
+    "board": [3, 3],
+    "winningSize": 3,
     "totalGames": 10,
     "agents": [
         {"name": "Simple", "scoring": [1, 10, 100, 1000], "restrictMoves": 10},

@@ -28,9 +28,9 @@ All cofiguration is provided in config.json.
 | printMoves | bool | If true, moves will be printed as games are played|
 
 ### Heuristic scoring
-Scoring is represented by array of integers. Array must be size of `winningSize-1`. Item at index `i` represents score for open combination of size `i` in any direction. Combination is consirdered open when it can be extended atleast on one end.
+Scoring is represented by array of integers. Array must be size of `winningSize-1`. Item at index `i` represents score for open combination of size `i` in any direction. Combination is considered open when it can be extended at least on one end.
 
-Scores can be negative. Combinations are form every point in every direction. First move is chosen randomly.
+Scores can be negative. Combinations are from every point in every direction. First move is chosen randomly.
 
 **Example:**
 
