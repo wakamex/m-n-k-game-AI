@@ -2,7 +2,7 @@ import random
 
 
 class Agent:
-    def __init__(self, player_number, board_size, winning_size, scoring_array, restrict_moves):
+    def __init__(self, player_number, board_size, winning_size, scoring_array, restrict_moves, CIRCLE_OF_TWO):
         # Agent remembers best found move for every beggining postion he ever evaluated
         self.memory = {
             "last_board_state": [0] * board_size[0] * board_size[1],
@@ -15,6 +15,7 @@ class Agent:
         self.winning_size = winning_size
         self.scoring_array = [0] + scoring_array
         self.restrict_moves = restrict_moves
+        self.CIRCLE_OF_TWO = CIRCLE_OF_TWO
 
     def forget(self):
         self.memory = {
@@ -232,43 +233,11 @@ class Agent:
                 player_two[length] += 1
         return (player_one, player_two)
 
-    def is_move_too_far_from_action(self, board, move):
-        # Move is considered too far if there is no other move in 2 wide circle
+    def is_move_too_far_from_action(self, board, move, CIRCLE_OF_TWO):
         parsed_move = move % self.board_size[0], move // self.board_size[1]
-        # Search one sized cricle
-        circle = [
-            [2, 2],
-            [1, 2],
-            [0, 2],
-            [-1, 2],
-            [-2, 2],
-            [2, 1],
-            [1, 1],
-            [0, 1],
-            [-1, 1],
-            [-2, 1],
-            [2, 0],
-            [1, 0],
-            [-1, 0],
-            [-2, 0],
-            [2, -1],
-            [1, -1],
-            [0, -1],
-            [-1, -1],
-            [-2, -1],
-            [2, -2],
-            [1, -2],
-            [0, -2],
-            [-1, -2],
-            [-2, -2],
-        ]
-        for circle_index in circle:
-            if parsed_move[0] + circle_index[0] >= self.board_size[0] or parsed_move[0] + circle_index[0] < 0:
-                continue
-            if parsed_move[1] + circle_index[1] >= self.board_size[1] or parsed_move[1] + circle_index[1] < 0:
-                continue
-
-            if (board[parsed_move[0] + circle_index[0] + (parsed_move[1] + circle_index[1]) * self.board_size[1]]) != 0:
+        for dx, dy in CIRCLE_OF_TWO:
+            x, y = parsed_move[0] + dx, parsed_move[1] + dy
+            if 0 <= x < self.board_size[0] and 0 <= y < self.board_size[1] and board[x + y * self.board_size[1]] != 0:
                 return False
         return True
 
@@ -277,7 +246,7 @@ class Agent:
         next_states = []
 
         for i in range(len(state["board_state"])):
-            if state["board_state"][i] == 0 and not self.is_move_too_far_from_action(state["board_state"], i):
+            if state["board_state"][i] == 0 and not self.is_move_too_far_from_action(state["board_state"], i, self.CIRCLE_OF_TWO):
                 next_moves.append(i)
         for idx, next_move in enumerate(next_moves):
             next_states.append({"board_state": state["board_state"].copy(), "lastMove": [next_move % self.board_size[0], next_move // self.board_size[1]], "sequences": None, "evaluation": None})

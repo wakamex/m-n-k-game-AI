@@ -43,10 +43,10 @@ At maximum depth and when deciding if postion is worth exploring, heuristic func
 
 ```
     "agents": [
-        {"name": "Simple", "scoring": [1, 10, 100, 1000], "restrictMoves": 5},
-        {"name": "Spread", "scoring": [1000, 10, 10, 10], "restrictMoves": 5},
-        {"name": "Cluster", "scoring": [-1000, 10, 10, 10], "restrictMoves": 5},
-        {"name": "Base", "scoring": [0, 0, 0, 0], "restrictMoves": 5}
+        {"name": "Simple", "scoring": [1, 10, 100, 1000], "restrict_moves": 5},
+        {"name": "Spread", "scoring": [1000, 10, 10, 10], "restrict_moves": 5},
+        {"name": "Cluster", "scoring": [-1000, 10, 10, 10], "restrict_moves": 5},
+        {"name": "Base", "scoring": [0, 0, 0, 0], "restrict_moves": 5}
     ]
 ```
 
