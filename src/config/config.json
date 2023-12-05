@@ -1,7 +1,7 @@
 {
     "board": [3, 3],
-    "winningSize": 3,
-    "totalGames": 10,
+    "winning_size": 3,
+    "total_games": 10,
     "agents": [
         {"name": "Simple", "scoring": [1, 10, 100, 1000], "restrictMoves": 10},
         {"name": "Spread", "scoring": [1000, 10, 10, 10], "restrictMoves": 10},

@@ -1,399 +1,347 @@
 import random
 
+
 class Agent:
-    def __init__(self, playerNumber, boardSize, winningSize, scoringArray, restrictMoves): 
-        #Agent remembers best found move for every beggining postion he ever evaluated
+    def __init__(self, player_number, board_size, winning_size, scoring_array, restrict_moves):
+        # Agent remembers best found move for every beggining postion he ever evaluated
         self.memory = {
-            "lastBoardState": [0] * boardSize[0] * boardSize[1],
-            "lastMovePlayed": [-1, -1], #x, y
-            #To be counted as sequence it must be open atleast on one side e.g. -1,1,1,1,0 is three
-            "lastBoardStateSequences": {
-                "playerOne": [0] * (winningSize + 1),    #e.g. count of fours is on index 4
-                "playerTwo": [0] * (winningSize + 1)
-            }
+            "last_board_state": [0] * board_size[0] * board_size[1],
+            "last_move_played": [-1, -1],  # x, y
+            # To be counted as sequence it must be open atleast on one side e.g. -1,1,1,1,0 is three
+            "last_board_state_sequence": {"player_one": [0] * (winning_size + 1), "player_two": [0] * (winning_size + 1)},  # e.g. count of fours is on index 4
         }
-        self.playerNumber = playerNumber
-        self.boardSize = boardSize
-        self.winningSize = winningSize
-        self.scoringArray = [0] + scoringArray
-        self.restrictMoves = restrictMoves
+        self.player_number = player_number
+        self.board_size = board_size
+        self.winning_size = winning_size
+        self.scoring_array = [0] + scoring_array
+        self.restrict_moves = restrict_moves
 
     def forget(self):
         self.memory = {
-            "lastBoardState": [0] * self.boardSize[0] * self.boardSize[1],
-            "lastMovePlayed": [-1, -1],
-            "lastBoardStateSequences": {
-                "playerOne": [0] * (self.winningSize + 1),
-                "playerTwo": [0] * (self.winningSize + 1)
-            }
+            "last_board_state": [0] * self.board_size[0] * self.board_size[1],
+            "last_move_played": [-1, -1],
+            "last_board_state_sequence": {"player_one": [0] * (self.winning_size + 1), "player_two": [0] * (self.winning_size + 1)},
         }
 
-    def getNextMove(self):
-        if (self.memory["lastMovePlayed"] == [-1, -1]):
-            return [random.randint(0,self.boardSize[0]-1), random.randint(0,self.boardSize[1]-1)]
-
+    def get_next_move(self):
+        if self.memory["last_move_played"] == [-1, -1]:
+            return [random.randint(0, self.board_size[0] - 1), random.randint(0, self.board_size[1] - 1)]
         state = {
-            "boardState": self.memory["lastBoardState"],
-            "lastMove": self.memory["lastMovePlayed"],
-            "sequences": (self.memory["lastBoardStateSequences"]["playerOne"], self.memory["lastBoardStateSequences"]["playerTwo"]),
+            "board_state": self.memory["last_board_state"],
+            "lastMove": self.memory["last_move_played"],
+            "sequences": (self.memory["last_board_state_sequence"]["player_one"], self.memory["last_board_state_sequence"]["player_two"]),
         }
-        
         move = self.minimax(state, 5, float("-inf"), float("inf"), True)
         return move[0]
 
-    def newMovePlayed(self, boardState):
-        for i in range(0, self.boardSize[0]*self.boardSize[1]):
-            if boardState[i] != self.memory["lastBoardState"][i]:
-                self.memory["lastMovePlayed"] = [i % self.boardSize[0], i // self.boardSize[1]]
+    def new_move_played(self, board_state):
+        for i in range(self.board_size[0] * self.board_size[1]):
+            if board_state[i] != self.memory["last_board_state"][i]:
+                self.memory["last_move_played"] = [i % self.board_size[0], i // self.board_size[1]]
                 break
+        new_sequences = self.count_sequences(
+            self.memory["last_board_state_sequence"]["player_one"],
+            self.memory["last_board_state_sequence"]["player_two"],
+            self.memory["last_board_state"],
+            board_state,
+            self.memory["last_move_played"],
+        )
+        self.memory["last_board_state_sequence"]["player_one"] = new_sequences[0]
+        self.memory["last_board_state_sequence"]["player_two"] = new_sequences[1]
+        self.memory["last_board_state"] = board_state.copy()
 
-        newSquences = self.countSequences(self.memory["lastBoardStateSequences"]["playerOne"], self.memory["lastBoardStateSequences"]["playerTwo"], self.memory["lastBoardState"], boardState, self.memory["lastMovePlayed"])
-        
-        self.memory["lastBoardStateSequences"]["playerOne"] = newSquences[0]
-        self.memory["lastBoardStateSequences"]["playerTwo"] = newSquences[1]
-        self.memory["lastBoardState"] = boardState.copy()
+    def count_sequences(self, player_one_sequences, player_two_sequences, board_state_old, board_state_new, move):
+        # Sequence counting is done by first counting incident sequences on old board, subtracting
+        # them from total and then adding new sequences from new board.
+        player_one = player_one_sequences.copy()
+        player_two = player_two_sequences.copy()
+        # Rows
+        old_rows = self.count_rows(board_state_old, move)
+        new_rows = self.count_rows(board_state_new, move)
+        # Columns
+        old_columns = self.count_columns(board_state_old, move)
+        new_columns = self.count_columns(board_state_new, move)
+        # Down diagonal
+        old_down_diagonal = self.count_down_diagonal(board_state_old, move)
+        new_down_diagonal = self.count_down_diagonal(board_state_new, move)
+        # Up diagonal
+        old_up_diagonal = self.count_up_diagonal(board_state_old, move)
+        new_up_diagonal = self.count_up_diagonal(board_state_new, move)
+        for i in range(1, self.winning_size + 1):
+            player_one[i] = (
+                player_one[i]
+                - old_rows[0][i]
+                + new_rows[0][i]
+                - old_columns[0][i]
+                + new_columns[0][i]
+                - old_up_diagonal[0][i]
+                + new_up_diagonal[0][i]
+                - old_down_diagonal[0][i]
+                + new_down_diagonal[0][i]
+            )
+            player_two[i] = (
+                player_two[i]
+                - old_rows[1][i]
+                + new_rows[1][i]
+                - old_columns[1][i]
+                + new_columns[1][i]
+                - old_up_diagonal[1][i]
+                + new_up_diagonal[1][i]
+                - old_down_diagonal[1][i]
+                + new_down_diagonal[1][i]
+            )
+        return player_one, player_two
 
-    def countSequences(self, playerOneSequences, playerTwoSequences, boardStateOld, boardStateNew, move):
-        #Sequence counting is done by first counting incident sequences on old board, subtracting 
-        #them from total and then adding new sequences from new board.
-        
-        playerOne = playerOneSequences.copy()
-        playerTwo = playerTwoSequences.copy()
-
-        #Rows       
-        oldRows = self.countRows(boardStateOld, move)
-        newRows = self.countRows(boardStateNew, move)
-
-        #Columns
-        oldColumns = self.countColumns(boardStateOld, move)
-        newColumns = self.countColumns(boardStateNew, move)
-
-        #Down diagonal
-        oldDownDiagonal = self.countDownDiagonal(boardStateOld, move)
-        newDownDiagonal = self.countDownDiagonal(boardStateNew, move)
-
-        #Up diagonal
-        oldUpDiagonal = self.countUpDiagonal(boardStateOld, move)
-        newUpDiagonal = self.countUpDiagonal(boardStateNew, move)
-
-        for i in range(1, self.winningSize+1):
-            playerOne[i] = playerOne[i] - oldRows[0][i] + newRows[0][i] - oldColumns[0][i] + newColumns[0][i] - oldUpDiagonal[0][i] + newUpDiagonal[0][i] - oldDownDiagonal[0][i] + newDownDiagonal[0][i]
-            playerTwo[i] = playerTwo[i] - oldRows[1][i] + newRows[1][i] - oldColumns[1][i] + newColumns[1][i] - oldUpDiagonal[1][i] + newUpDiagonal[1][i] - oldDownDiagonal[1][i] + newDownDiagonal[1][i]
-
-        return (playerOne, playerTwo)
-
-    def countRows(self, boardState, move):
-        playerOne = [0] * (self.winningSize + 1)
-        playerTwo = [0] * (self.winningSize + 1)
-
-        #Cylce iterates over all possible starting points
+    def count_rows(self, board_state, move):
+        player_one = [0] * (self.winning_size + 1)
+        player_two = [0] * (self.winning_size + 1)
+        # Cycle iterates over all possible starting points
         counting = 0
-        currentSequenceIsValid = False
+        current_sequence_is_valid = False
         length = 0
-
-        for i in range(move[1]*self.boardSize[0], move[1]*self.boardSize[0]+self.boardSize[0]):    
-            if (boardState[i] != counting):
-                if (length > self.winningSize):
-                    length = self.winningSize
-                
-                if (counting == 0 or boardState[i] == 0):
-                    #Sequence must start or end with empty space to be valid
-                    currentSequenceIsValid = True
-                if (counting == 1 and currentSequenceIsValid):
-                    playerOne[length] += 1
-                    currentSequenceIsValid = False
-                if (counting == -1 and currentSequenceIsValid):                    
-                    playerTwo[length] += 1
-                    currentSequenceIsValid = False
-
-                counting = boardState[i]
+        for i in range(move[1] * self.board_size[0], move[1] * self.board_size[0] + self.board_size[0]):
+            if board_state[i] != counting:
+                length = min(length, self.winning_size)
+                if counting == 0 or board_state[i] == 0:
+                    # Sequence must start or end with empty space to be valid
+                    current_sequence_is_valid = True
+                if counting == 1 and current_sequence_is_valid:
+                    player_one[length] += 1
+                    current_sequence_is_valid = False
+                if counting == -1 and current_sequence_is_valid:
+                    player_two[length] += 1
+                    current_sequence_is_valid = False
                 length = 1
             else:
-                counting = boardState[i]
                 length += 1
-
-        #Sequence could end on board end
-        if (counting != 0 and currentSequenceIsValid):
-            if (length > self.winningSize):
-                length = self.winningSize
-                
-            if (counting == 1):
-                playerOne[length] += 1
+            counting = board_state[i]
+        # Sequence could end on board end
+        if counting != 0 and current_sequence_is_valid:
+            length = min(length, self.winning_size)
+            if counting == 1:
+                player_one[length] += 1
             else:
-                playerTwo[length] += 1
-        
-        return(playerOne, playerTwo)
+                player_two[length] += 1
+        return (player_one, player_two)
 
-    def countColumns(self, boardState, move): 
-        playerOne = [0] * (self.winningSize + 1)
-        playerTwo = [0] * (self.winningSize + 1)
-
-        #Cylce iterates over all possible starting points
+    def count_columns(self, board_state, move):
+        player_one = [0] * (self.winning_size + 1)
+        player_two = [0] * (self.winning_size + 1)
+        # Cycle iterates over all possible starting points
         counting = 0
-        currentSequenceIsValid = False
+        current_sequence_is_valid = False
         length = 0
-
-        for i in range(move[0], self.boardSize[0]*self.boardSize[1], self.boardSize[1]):            
-            if (boardState[i] != counting):
-                if (length > self.winningSize):
-                    length = self.winningSize
-
-                if (counting == 0 or boardState[i] == 0):
-                    #Sequence must start or end with empty space to be valid
-                    currentSequenceIsValid = True
-                if (counting == 1 and currentSequenceIsValid):
-                    playerOne[length] += 1
-                    currentSequenceIsValid = False
-                if (counting == -1 and currentSequenceIsValid):                    
-                    playerTwo[length] += 1
-                    currentSequenceIsValid = False
-
-                counting = boardState[i]
+        for i in range(move[0], self.board_size[0] * self.board_size[1], self.board_size[1]):
+            if board_state[i] != counting:
+                length = min(length, self.winning_size)
+                if counting == 0 or board_state[i] == 0:
+                    # Sequence must start or end with empty space to be valid
+                    current_sequence_is_valid = True
+                if counting == 1 and current_sequence_is_valid:
+                    player_one[length] += 1
+                    current_sequence_is_valid = False
+                if counting == -1 and current_sequence_is_valid:
+                    player_two[length] += 1
+                    current_sequence_is_valid = False
                 length = 1
             else:
-                counting = boardState[i]
                 length += 1
-
-        #Sequence could end on board end
-        if (counting != 0 and currentSequenceIsValid):
-            if (length > self.winningSize):
-                length = self.winningSize
-                
-            if (counting == 1):
-                playerOne[length] += 1
+            counting = board_state[i]
+        # Sequence could end on board end
+        if counting != 0 and current_sequence_is_valid:
+            length = min(length, self.winning_size)
+            if counting == 1:
+                player_one[length] += 1
             else:
-                playerTwo[length] += 1
-        
-        return(playerOne, playerTwo)
+                player_two[length] += 1
+        return (player_one, player_two)
 
-    
-    def countDownDiagonal(self, boardState, move): 
-        playerOne = [0] * (self.winningSize + 1)
-        playerTwo = [0] * (self.winningSize + 1)
-
-        #Cylce iterates over all possible starting points
+    def count_down_diagonal(self, board_state, move):
+        player_one = [0] * (self.winning_size + 1)
+        player_two = [0] * (self.winning_size + 1)
+        # Cycle iterates over all possible starting points
         counting = 0
-        currentSequenceIsValid = False
+        current_sequence_is_valid = False
         length = 0
-
-        #Math magic works as follows:
-        #First element on diagonal can be calculated from move by modulo length of step
-        #Every step is length of row + 1
-        for i in range((move[0]+(move[1]*self.boardSize[0]))%(self.boardSize[0]+1), self.boardSize[0]*self.boardSize[1], self.boardSize[0]+1):   
-            if (boardState[i] != counting):
-                if (length > self.winningSize):
-                    length = self.winningSize
-                
-                if (counting == 0 or boardState[i] == 0):
-                    #Sequence must start or end with empty space to be valid
-                    currentSequenceIsValid = True
-                if (counting == 1 and currentSequenceIsValid):
-                    playerOne[length] += 1
-                    currentSequenceIsValid = False
-                if (counting == -1 and currentSequenceIsValid):                    
-                    playerTwo[length] += 1
-                    currentSequenceIsValid = False
-
-                counting = boardState[i]
+        # Math magic works as follows:
+        # First element on diagonal can be calculated from move by modulo length of step
+        # Every step is length of row + 1
+        for i in range((move[0] + (move[1] * self.board_size[0])) % (self.board_size[0] + 1), self.board_size[0] * self.board_size[1], self.board_size[0] + 1):
+            if board_state[i] != counting:
+                length = min(length, self.winning_size)
+                if counting == 0 or board_state[i] == 0:
+                    # Sequence must start or end with empty space to be valid
+                    current_sequence_is_valid = True
+                if counting == 1 and current_sequence_is_valid:
+                    player_one[length] += 1
+                    current_sequence_is_valid = False
+                if counting == -1 and current_sequence_is_valid:
+                    player_two[length] += 1
+                    current_sequence_is_valid = False
                 length = 1
             else:
-                counting = boardState[i]
                 length += 1
-            
-            #Handle diagonal overflowing board by checking if we didn't skip a row by increasing index 
-            if (i // self.boardSize[1] + 1 != ((i + self.boardSize[0] + 1) // self.boardSize[1])):
+            counting = board_state[i]
+            # Handle diagonal overflowing board by checking if we didn't skip a row by increasing index
+            if i // self.board_size[1] + 1 != ((i + self.board_size[0] + 1) // self.board_size[1]):
                 break
-
-        #Sequence could end on board end
-        if (counting != 0 and currentSequenceIsValid):
-            if (length > self.winningSize):
-                length = self.winningSize
-                
-            if (counting == 1):
-                playerOne[length] += 1
+        # Sequence could end on board end
+        if counting != 0 and current_sequence_is_valid:
+            length = min(length, self.winning_size)
+            if counting == 1:
+                player_one[length] += 1
             else:
-                playerTwo[length] += 1
-        
-        return(playerOne, playerTwo)
+                player_two[length] += 1
+        return (player_one, player_two)
 
-    def countUpDiagonal(self, boardState, move): 
-        playerOne = [0] * (self.winningSize + 1)
-        playerTwo = [0] * (self.winningSize + 1)
-
-        #Cylce iterates over all possible starting points
+    def count_up_diagonal(self, board_state, move):
+        player_one = [0] * (self.winning_size + 1)
+        player_two = [0] * (self.winning_size + 1)
+        # Cycle iterates over all possible starting points
         counting = 0
-        currentSequenceIsValid = False
+        current_sequence_is_valid = False
         length = 0
-
-        #Math magic works as follows:
-        #First element on diagonal can be calculated from move by modulo length of step
-        #Every step is length of row - 1
-        for i in range((move[0]+(move[1]*self.boardSize[0]))%(self.boardSize[0]-1), self.boardSize[0]*self.boardSize[1], self.boardSize[0]-1):   
-            if (boardState[i] != counting):
-                if (length > self.winningSize):
-                    length = self.winningSize
-                
-                if (counting == 0 or boardState[i] == 0):
-                    #Sequence must start or end with empty space to be valid
-                    currentSequenceIsValid = True
-                if (counting == 1 and currentSequenceIsValid):
-                    playerOne[length] += 1
-                    currentSequenceIsValid = False
-                if (counting == -1 and currentSequenceIsValid):                    
-                    playerTwo[length] += 1
-                    currentSequenceIsValid = False
-
-                counting = boardState[i]
+        # Math magic works as follows:
+        # First element on diagonal can be calculated from move by modulo length of step
+        # Every step is length of row - 1
+        for i in range((move[0] + (move[1] * self.board_size[0])) % (self.board_size[0] - 1), self.board_size[0] * self.board_size[1], self.board_size[0] - 1):
+            if board_state[i] != counting:
+                length = min(length, self.winning_size)
+                if counting == 0 or board_state[i] == 0:
+                    # Sequence must start or end with empty space to be valid
+                    current_sequence_is_valid = True
+                if counting == 1 and current_sequence_is_valid:
+                    player_one[length] += 1
+                    current_sequence_is_valid = False
+                if counting == -1 and current_sequence_is_valid:
+                    player_two[length] += 1
+                    current_sequence_is_valid = False
                 length = 1
             else:
-                counting = boardState[i]
                 length += 1
-            
-            #Handle diagonal overflowing board by checking if we didn't end on a same row by increasing index 
-            if (i // self.boardSize[1] == ((i + self.boardSize[0] - 1) // self.boardSize[1])):
-               break
-
-        #Sequence could end on board end
-        if (counting != 0 and currentSequenceIsValid):
-            if (length > self.winningSize):
-                length = self.winningSize
-                
-            if (counting == 1):
-                playerOne[length] += 1
+            counting = board_state[i]
+            # Handle diagonal overflowing board by checking if we didn't end on a same row by increasing index
+            if i // self.board_size[1] == ((i + self.board_size[0] - 1) // self.board_size[1]):
+                break
+        # Sequence could end on board end
+        if counting != 0 and current_sequence_is_valid:
+            length = min(length, self.winning_size)
+            if counting == 1:
+                player_one[length] += 1
             else:
-                playerTwo[length] += 1
-        
-        return(playerOne, playerTwo)
+                player_two[length] += 1
+        return (player_one, player_two)
 
-    def isMoveTooFarFromAction(self, board, move):
-        #Move is considered too far if there is no other move in 2 wide circle
-        parsedMove = move % self.boardSize[0], move // self.boardSize[1]
-        
-        #Search one sized cricle
-        circle = [ 
-                [2,2],  [1,2],  [0,2],  [-1,2], [-2,2],
-                [2,1],  [1,1],  [0,1],  [-1,1], [-2,1],
-                [2,0],  [1,0],          [-1,0], [-2,0],   
-                [2,-1], [1,-1], [0,-1], [-1,-1],[-2,-1],
-                [2,-2], [1,-2], [0,-2], [-1,-2],[-2,-2]
-            ]
+    def is_move_too_far_from_action(self, board, move):
+        # Move is considered too far if there is no other move in 2 wide circle
+        parsed_move = move % self.board_size[0], move // self.board_size[1]
+        # Search one sized cricle
+        circle = [
+            [2, 2],
+            [1, 2],
+            [0, 2],
+            [-1, 2],
+            [-2, 2],
+            [2, 1],
+            [1, 1],
+            [0, 1],
+            [-1, 1],
+            [-2, 1],
+            [2, 0],
+            [1, 0],
+            [-1, 0],
+            [-2, 0],
+            [2, -1],
+            [1, -1],
+            [0, -1],
+            [-1, -1],
+            [-2, -1],
+            [2, -2],
+            [1, -2],
+            [0, -2],
+            [-1, -2],
+            [-2, -2],
+        ]
+        for circle_index in circle:
+            if parsed_move[0] + circle_index[0] >= self.board_size[0] or parsed_move[0] + circle_index[0] < 0:
+                continue
+            if parsed_move[1] + circle_index[1] >= self.board_size[1] or parsed_move[1] + circle_index[1] < 0:
+                continue
 
-        for circleIndex in circle:
-            if (parsedMove[0]+circleIndex[0] >= self.boardSize[0] or parsedMove[0]+circleIndex[0] < 0): continue
-            if (parsedMove[1]+circleIndex[1] >= self.boardSize[1] or parsedMove[1]+circleIndex[1] < 0): continue
-
-            if ((board[parsedMove[0]+circleIndex[0] + (parsedMove[1]+circleIndex[1])*self.boardSize[1]]) != 0):
+            if (board[parsed_move[0] + circle_index[0] + (parsed_move[1] + circle_index[1]) * self.board_size[1]]) != 0:
                 return False
-        
         return True
 
-    def generateNextMoves(self, state, player): 
-        nextMoves = []
-        nextStates = []
+    def generate_next_moves(self, state, player):
+        next_moves = []
+        next_states = []
 
-        for i in range(0, len(state["boardState"])):
-            if (state["boardState"][i] == 0):
-                if (not self.isMoveTooFarFromAction(state["boardState"], i)):
-                    nextMoves.append(i)
-
-        for i in range(0, len(nextMoves)):
-            nextStates.append({
-                "boardState": state["boardState"].copy(),
-                "lastMove": [nextMoves[i] % self.boardSize[0], nextMoves[i] // self.boardSize[1]],
-                "sequences": None,
-                "evaluation": None
-            })
-
-            nextStates[i]["boardState"][nextMoves[i]] = player
-            nextStates[i]["sequences"] = self.countSequences(state["sequences"][0], state["sequences"][1], state["boardState"], nextStates[i]["boardState"], nextStates[i]["lastMove"])
-            nextStates[i]["evaluation"] = self.evaluate(nextStates[i])
-
-        #Make job of alpha-beta easier by ordering from best/worst move and restricing number of checked moves
-        sortedStates = sorted(nextStates, key=lambda k: k['evaluation'], reverse=(player == self.playerNumber))
-        return( sortedStates[0:self.restrictMoves] )
-
+        for i in range(len(state["board_state"])):
+            if state["board_state"][i] == 0 and not self.is_move_too_far_from_action(state["board_state"], i):
+                next_moves.append(i)
+        for idx, next_move in enumerate(next_moves):
+            next_states.append({"board_state": state["board_state"].copy(), "lastMove": [next_move % self.board_size[0], next_move // self.board_size[1]], "sequences": None, "evaluation": None})
+            next_states[idx]["board_state"][next_move] = player
+            next_states[idx]["sequences"] = self.count_sequences(state["sequences"][0], state["sequences"][1], state["board_state"], next_states[idx]["board_state"], next_states[idx]["lastMove"])
+            next_states[idx]["evaluation"] = self.evaluate(next_states[idx])
+        # Make job of alpha-beta easier by ordering from best/worst move and restricing number of checked moves
+        sorted_states = sorted(next_states, key=lambda k: k["evaluation"], reverse=(player == self.player_number))
+        return sorted_states[: self.restrict_moves]
 
     def evaluate(self, state):
-        if (state["sequences"][0][self.winningSize] != 0):
-            if (self.playerNumber == 1):
-                return float("inf")
-            return float("-inf")
+        if state["sequences"][0][self.winning_size] != 0:
+            return float("inf") if (self.player_number == 1) else float("-inf")
+        if state["sequences"][1][self.winning_size] != 0:
+            return float("inf") if (self.player_number == -1) else float("-inf")
+        return sum(
+            (state["sequences"][0][i] - state["sequences"][1][i]) * self.scoring_array[i] if self.player_number == 1 else (state["sequences"][1][i] - state["sequences"][0][i]) * self.scoring_array[i]
+            for i in range(1, self.winning_size)
+        )
 
-        if (state["sequences"][1][self.winningSize] != 0):
-            if (self.playerNumber == -1):
-                return float("inf")
-            return float("-inf")
-
-        score = 0
-        for i in range(1, self.winningSize):
-            if self.playerNumber == 1:
-                score += (state["sequences"][0][i] - state["sequences"][1][i]) * self.scoringArray[i]
-            else:
-                score += (state["sequences"][1][i] - state["sequences"][0][i]) * self.scoringArray[i]
-        return score
-    
-    def isGameOver(self, state):
-        if (state["sequences"][0][self.winningSize] != 0 or state["sequences"][1][self.winningSize] != 0):
+    def is_game_over(self, state):
+        if state["sequences"][0][self.winning_size] != 0 or state["sequences"][1][self.winning_size] != 0:
             return True
+        return all(state["board_state"][i] != 0 for i in range(len(state["board_state"])))
 
-        boardIsFull = True
-        for i in range(len(state["boardState"])):
-            if (state["boardState"][i] == 0):
-                boardIsFull = False
-                break
-        
-        return boardIsFull
-
-    def printBoard(self, board):
+    def print_board(self, board):
         print("---------")
-        for i in range(0, self.boardSize[1]):            
-            printRow = []
-            for j in range (0, self.boardSize[0]):
-                if (board[i*self.boardSize[0]+j] == 1):
-                    printRow.append("X")
-                if (board[i*self.boardSize[0]+j] == -1):
-                    printRow.append("O")
-                if (board[i*self.boardSize[0]+j] == 0):
-                    printRow.append("-")
-            print(printRow)
+        for i in range(self.board_size[1]):
+            print_row = []
+            for j in range(self.board_size[0]):
+                if board[i * self.board_size[0] + j] == 1:
+                    print_row.append("X")
+                if board[i * self.board_size[0] + j] == -1:
+                    print_row.append("O")
+                if board[i * self.board_size[0] + j] == 0:
+                    print_row.append("-")
+            print(print_row)
         print("---------")
 
     def minimax(self, state, depth, alpha, beta, maximizing):
-        if (depth == 0 or self.isGameOver(state)):
+        if depth == 0 or self.is_game_over(state):
             return (state["lastMove"], self.evaluate(state))
-        
+        best_move = None
         if maximizing:
             value = float("-inf")
-            bestMove = None
-            nextMoves = self.generateNextMoves(state, self.playerNumber)
-
-            for move in nextMoves:
-                node = self.minimax(move, depth-1, alpha, beta, False)
-                #print(node[1], value)
-                if (node[1] >= value):
+            next_moves = self.generate_next_moves(state, self.player_number)
+            for move in next_moves:
+                node = self.minimax(move, depth - 1, alpha, beta, False)
+                # print(node[1], value)
+                if node[1] >= value:
                     value = node[1]
-                    bestMove = node[0]
+                    best_move = node[0]
                 alpha = max(alpha, value)
-
                 if alpha >= beta:
                     break
-            
-            return (bestMove, value)
         else:
             value = float("inf")
-            bestMove = None
-
-            nextMoves = self.generateNextMoves(state, self.playerNumber*-1)
-
-            for move in nextMoves:
-                node = self.minimax(move, depth-1, alpha, beta, True)
-                
-                if (node[1] <= value):
+            next_moves = self.generate_next_moves(state, self.player_number * -1)
+            for move in next_moves:
+                node = self.minimax(move, depth - 1, alpha, beta, True)
+                if node[1] <= value:
                     value = node[1]
-                    bestMove = node[0]
-
+                    best_move = node[0]
                 beta = min(beta, value)
                 if beta <= alpha:
                     break
-
-            return (bestMove, value)           
+        return best_move, value

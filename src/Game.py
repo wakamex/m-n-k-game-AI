@@ -1,84 +1,75 @@
 class Game:
-    def __init__(self, boardSizeX, boardSizeY, winningSize, totalGames, agent1, agent2, endTurnPrint):
-            self.board = [0] * boardSizeX * boardSizeY
-            self.boardSize = [boardSizeX, boardSizeY]
-            self.playedGames = 0
-            self.totalGames = totalGames
-            self.playerTurn = 1
-            self.agents = [agent1, agent2]
-            self.winningSize = winningSize
-            self.scores = [0, 0]
-            self.endTurnPrint = endTurnPrint
-            
-    def playAgentMove(self):
-        move = self.getAgentMove()
-        self.playMove(move[0], move[1])
+    def __init__(self, board_size_x, board_size_y, winning_size, total_games, agent1, agent2, end_turn_print):
+        self.board = [0] * board_size_x * board_size_y
+        self.board_size = [board_size_x, board_size_y]
+        self.played_games = 0
+        self.total_games = total_games
+        self.player_turn = 1
+        self.agents = [agent1, agent2]
+        self.winning_size = winning_size
+        self.scores = [0, 0]
+        self.end_turn_print = end_turn_print
 
-    def getAgentMove(self):
-        if (self.playerTurn == 1):
-            return self.agents[0].getNextMove()
-        return self.agents[1].getNextMove()
+    def play_agent_move(self):
+        move = self.get_agent_move()
+        self.play_move(move[0], move[1])
 
-    def playMove(self, x, y):
-        if (self.board[y*self.boardSize[1] + x] == 0):
-            self.board[y*self.boardSize[1] + x] = self.playerTurn
+    def get_agent_move(self):
+        if self.player_turn == 1:
+            return self.agents[0].get_next_move()
+        return self.agents[1].get_next_move()
 
-            for i in range(0, len(self.agents)):
-                self.agents[i].newMovePlayed(self.board)
-            if (self.endTurnPrint):
-                self.printBoard()
-            self.endTurn()
+    def play_move(self, x, y):
+        if self.board[y * self.board_size[1] + x] == 0:
+            self.board[y * self.board_size[1] + x] = self.player_turn
+            for agent in self.agents:
+                agent.new_move_played(self.board)
+            if self.end_turn_print:
+                self.print_board()
+            self.end_turn()
 
-    def endTurn(self):
-        self.checkForWin()
-        self.playerTurn = -1 * self.playerTurn
+    def end_turn(self):
+        self.check_for_win()
+        self.player_turn = -1 * self.player_turn
 
-    def handleWin(self, playerWin):        
-        self.playedGames += 1
-        if (playerWin == 1):
-            self.scores[0] += 1
-        if (playerWin == -1):
+    def handle_win(self, player_win):
+        self.played_games += 1
+        if player_win == -1:
             self.scores[1] += 1
-
-        if (self.playedGames < self.totalGames):
-            self.board = [0] * self.boardSize[0] * self.boardSize[1]
-            self.playerTurn = 1
-
+        elif player_win == 1:
+            self.scores[0] += 1
+        if self.played_games < self.total_games:
+            self.board = [0] * self.board_size[0] * self.board_size[1]
+            self.player_turn = 1
             self.agents[0].forget()
             self.agents[1].forget()
         else:
-            print("Played " + str(self.playedGames) + " games, with scores: " + str(self.scores[0]) + ":" + str(self.scores[1]) )
+            print(f"Played {self.played_games} games, with scores: {str(self.scores[0])}:{str(self.scores[1])}")
 
-
-    def checkForWin(self):
-        #We trust agent in order to save time checking board, this could be handled by "referee" agent
-        if (self.agents[0].memory["lastBoardStateSequences"]["playerOne"][self.winningSize] >= 1):
-            self.handleWin(1)
+    def check_for_win(self):
+        # We trust agent in order to save time checking board, this could be handled by "referee" agent
+        if self.agents[0].memory["last_board_state_sequence"]["player_one"][self.winning_size] >= 1:
+            self.handle_win(1)
             return
 
-        if (self.agents[0].memory["lastBoardStateSequences"]["playerTwo"][self.winningSize] >= 1):
-            self.handleWin(-1)
+        if self.agents[0].memory["last_board_state_sequence"]["player_two"][self.winning_size] >= 1:
+            self.handle_win(-1)
             return
 
-        boardIsFull = True
-        for i in range(len(self.board)):
-            if (self.board[i] == 0):
-                boardIsFull = False
-                break
+        board_is_full = all(place != 0 for place in self.board)
+        if board_is_full:
+            self.handle_win(0)
 
-        if (boardIsFull):
-            self.handleWin(0)
-
-    def printBoard(self):
+    def print_board(self):
         print("---------")
-        for i in range(0, self.boardSize[1]):            
-            printRow = []
-            for j in range (0, self.boardSize[0]):
-                if (self.board[i*self.boardSize[0]+j] == 1):
-                    printRow.append("X")
-                if (self.board[i*self.boardSize[0]+j] == -1):
-                    printRow.append("O")
-                if (self.board[i*self.boardSize[0]+j] == 0):
-                    printRow.append("-")
-            print(printRow)
+        for i in range(self.board_size[1]):
+            print_row = []
+            for j in range(self.board_size[0]):
+                if self.board[i * self.board_size[0] + j] == 1:
+                    print_row.append("X")
+                if self.board[i * self.board_size[0] + j] == -1:
+                    print_row.append("O")
+                if self.board[i * self.board_size[0] + j] == 0:
+                    print_row.append("-")
+            print(print_row)
         print("---------")
