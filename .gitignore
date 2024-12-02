@@ -75,3 +75,4 @@ dmypy.json
 .idea
 
 __pycache__
+.magic
