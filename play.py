@@ -27,9 +27,9 @@ while len(agents) > 1:
             config["board"][1],
             config["winning_size"],
             config["total_games"],
-            Agent(1, [config["board"][0], config["board"][1]], config["winning_size"], pivot_agent["scoring"], pivot_agent["restrict_moves"], CIRCLE_OF_TWO),
-            Agent(-1, [config["board"][0], config["board"][1]], config["winning_size"], agent["scoring"], agent["restrict_moves"], CIRCLE_OF_TWO),
-            config["printMoves"],
+            Agent(0, [config["board"][0], config["board"][1]], config["winning_size"], pivot_agent["scoring"], pivot_agent["restrict_moves"], CIRCLE_OF_TWO),
+            Agent(1, [config["board"][0], config["board"][1]], config["winning_size"], agent["scoring"], agent["restrict_moves"], CIRCLE_OF_TWO),
+            config["print_moves"],
         )
         while game.total_games > game.played_games:
             game.play_agent_move()  # Play all games between two agents

@@ -25,7 +25,7 @@ All cofiguration is provided in config.json.
 | agents[name] | String | Name of agent |
 | agents[scoring] | Array[int] | Scoring of combitation explained below |
 | agents[restricMoves] | Array[int] | Number of best moves to be explored on every tree level |
-| printMoves | bool | If true, moves will be printed as games are played|
+| print_moves | bool | If true, moves will be printed as games are played|
 
 ### Heuristic scoring
 Scoring is represented by array of integers. Array must be size of `winningSize-1`. Item at index `i` represents score for open combination of size `i` in any direction. Combination is considered open when it can be extended at least on one end.
