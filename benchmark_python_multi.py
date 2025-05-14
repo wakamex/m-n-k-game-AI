@@ -1,4 +1,4 @@
-from src.Agent import Agent
+from mnk.Agent import Agent
 import numpy as np
 
 def create_board(pattern: int, size: int) -> np.ndarray:

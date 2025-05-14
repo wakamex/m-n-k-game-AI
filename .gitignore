@@ -76,3 +76,4 @@ dmypy.json
 
 __pycache__
 .magic
+*.egg-info

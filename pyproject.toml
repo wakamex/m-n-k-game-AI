@@ -1,5 +1,6 @@
 [project]
-name = "project"
+name = "mnk"
+version = "0.1.0"
 authors = [{ name = "Mihai Cosma", email = "mcosma@gmail.com" }]
 
 [tool.pylint.format]
