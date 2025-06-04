@@ -117,7 +117,11 @@ class Agent:
             # Or, more clearly, minimax explores `self.search_depth` *plies down from the opponent's turn*.
             # If self.search_depth = 1, minimax is called with depth 0 (evaluate current board after move).
             
-            value = self.minimax(move_state, self.search_depth -1, float("-inf"), float("inf"), self.player_number == 1) # True if P0 (agent) just moved, so P1 (opponent) is minimizing
+            value = self.minimax(move_state, self.search_depth -1, float("-inf"), float("inf"), self.player_number == 1) # True if P1 (agent) just moved, so P0 (opponent) is maximizing
+            
+            # Debug output for critical positions
+            if self.player_number == 1 and self.search_depth == 1:
+                print(f"  Move {move_state['last_move']}: value = {value:.2f}")
 
             if self.player_number == 0:  # Agent is P0 (Maximizing player)
                 if value > best_value:

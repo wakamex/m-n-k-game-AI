@@ -7,8 +7,8 @@ from mnk.constants import EMPTY, NOONE, MAX_TIME
 # Configuration
 BOARD_SIZE = (3, 3)
 WINNING_SIZE = 3
-TOTAL_GAMES = 10
-PRINT_MOVES = False # Set to True to see game play
+TOTAL_GAMES = 2
+PRINT_MOVES = True # Set to True to see game play
 
 # Agent configurations - now includes depth
 AGENTS_CONFIG = [
@@ -70,7 +70,7 @@ def run_tournament(agent_config1, agent_config2, num_games=100): # Take full con
 
     for i in range(num_games):
         game_start_time = time.time()
-        print(f"Starting game {i+1}/{num_games}...")
+        print(f"\n=== Starting game {i+1}/{num_games} ===")
         game.reset_game() # Reset board, player_turn, winner, and agent memory
 
         # In this setup, agent1 is always P0 and agent2 is always P1 for this match.
@@ -123,9 +123,10 @@ def run_tournament(agent_config1, agent_config2, num_games=100): # Take full con
             print(f"Unknown game winner state: {game.winner}")
             draws +=1 # Count as draw
 
+        print(f"Game {i+1} ended. Winner: Player {game.winner if game.winner != NOONE else 'Draw'}")
+        
         if (i + 1) % (num_games // 10 if num_games >=10 else 1) == 0 or i == num_games -1 :
-            print(f"Game {i+1} ended. Winner: Player {game.winner if game.winner != NOONE else 'Draw'}. "
-                  f"Current match score: {agent1.name} {match_scores[0]} - {agent2.name} {match_scores[1]} (Draws: {draws})")
+            print(f"Current match score: {agent1.name} {match_scores[0]} - {agent2.name} {match_scores[1]} (Draws: {draws})")
 
     return match_scores, draws
 

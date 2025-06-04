@@ -54,6 +54,7 @@ class Game:
     def end_turn(self):
         if self.is_game_over():
             self.handle_win()
+            return  # Don't switch players after game ends
         self.player_turn = 1 - self.player_turn
 
     def handle_win(self):
@@ -68,9 +69,6 @@ class Game:
         if self.end_turn_print:
             print(f"Game over! Winner: {'Tie' if self.winner == NOONE else f'Player {self.winner}'}")
             print(f"Scores: {self.scores[0]}:{self.scores[1]}")
-            
-        # Reset for next game
-        self.reset_game()
 
     def check_for_win(self):
         # We trust agent in order to save time checking board, this could be handled by "referee" agent
